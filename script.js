@@ -8,7 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const pages = document.querySelectorAll('.page');
     const themeBtns = document.querySelectorAll('.theme-btn');
     const currencyBtns = document.querySelectorAll('.currency-btn');
+    const addForm = document.getElementById('add-form');
+    const assetTypeSelect = document.getElementById('asset-type');
+    const bankSelectDiv = document.getElementById('bank-select');
+
     let currentCurrency = '₽';
+    let totalBalance = 0;
+    const assetsData = []; // Пустой массив для хранения данных
 
     // --- Логика переключения темы ---
     function applyTheme(theme) {
@@ -51,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Логика для страницы настроек ---
-    // Смена темы по кнопке
     document.getElementById('theme-light-btn').addEventListener('click', () => {
         applyTheme('light');
     });
@@ -60,11 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
         applyTheme('dark');
     });
 
-    // Смена валюты (пока только для отображения)
     document.getElementById('currency-rub-btn').addEventListener('click', () => {
         currentCurrency = '₽';
         updateCurrencyButtons('currency-rub-btn');
-        // Обновляем отображение всех сумм
         updateBalanceDisplay();
     });
 
@@ -80,19 +83,54 @@ document.addEventListener('DOMContentLoaded', () => {
         updateBalanceDisplay();
     });
 
-    // Функция для подсветки активной кнопки валюты
     function updateCurrencyButtons(activeBtnId) {
-        document.querySelectorAll('.currency-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.setting-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById(activeBtnId).classList.add('active');
     }
 
-    // Временные данные для примера
-    const assetsData = [
-        { name: 'Золото', amount: 8000, type: 'metal' },
-        { name: 'Bitcoin', amount: 2000, type: 'crypto' },
-        { name: 'Акции Газпром', amount: 5000, type: 'stocks' }
-    ];
-    let totalBalance = 15000;
+    // --- Логика для формы добавления данных ---
+    // Показываем/скрываем поле "Банк" в зависимости от выбранного типа актива
+    assetTypeSelect.addEventListener('change', (event) => {
+        if (event.target.value === 'metal') {
+            bankSelectDiv.style.display = 'flex';
+        } else {
+            bankSelectDiv.style.display = 'none';
+        }
+    });
+
+    addForm.addEventListener('submit', (event) => {
+        event.preventDefault(); // Предотвращаем перезагрузку страницы
+
+        const name = document.getElementById('asset-name').value;
+        const amount = parseFloat(document.getElementById('asset-amount').value);
+        const type = document.getElementById('asset-type').value;
+
+        if (name && !isNaN(amount) && amount > 0) {
+            assetsData.push({
+                name: name,
+                amount: amount,
+                type: type,
+                // Здесь в будущем можно будет добавить банк, дату и т.д.
+            });
+
+            totalBalance += amount; // Обновляем общий баланс
+
+            // Очищаем форму после добавления
+            addForm.reset();
+            bankSelectDiv.style.display = 'none'; // Скрываем поле "Банк"
+
+            // Обновляем отображение
+            updateBalanceDisplay();
+            showPage('home-page'); // Возвращаемся на главную страницу
+            document.getElementById('home-btn').classList.add('active'); // Подсвечиваем кнопку "Домой"
+            document.getElementById('add-btn').classList.remove('active'); // Убираем подсветку с "+"
+            
+            // Здесь в будущем будет отправка данных на сервер
+            tg.showAlert(`Актив "${name}" на сумму ${amount} ${currentCurrency} добавлен!`);
+        } else {
+            tg.showAlert('Пожалуйста, заполните все поля!');
+        }
+    });
 
     // Функция для отрисовки активов и обновления баланса
     function updateBalanceDisplay() {
@@ -104,15 +142,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Обновляем список активов
         assetsList.innerHTML = '';
-        assetsData.forEach(asset => {
-            const assetItem = document.createElement('div');
-            assetItem.classList.add('asset-item');
-            assetItem.innerHTML = `
-                <span>${asset.name}</span>
-                <span>${asset.amount} ${currentCurrency}</span>
-            `;
-            assetsList.appendChild(assetItem);
-        });
+        if (assetsData.length === 0) {
+            assetsList.innerHTML = `<p class="centered" style="opacity: 0.6;">Активов пока нет.</p>`;
+        } else {
+            assetsData.forEach(asset => {
+                const assetItem = document.createElement('div');
+                assetItem.classList.add('asset-item');
+                assetItem.innerHTML = `
+                    <span>${asset.name}</span>
+                    <span>${asset.amount} ${currentCurrency}</span>
+                `;
+                assetsList.appendChild(assetItem);
+            });
+        }
     }
 
     // Инициализация при запуске
