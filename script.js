@@ -1,18 +1,13 @@
-// Ждем, пока весь HTML-документ будет загружен
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Инициализируем Telegram WebApp
     const tg = window.Telegram.WebApp;
-    tg.ready(); // Уведомляем Telegram, что приложение готово
+    tg.ready();
 
-    // Определяем элементы интерфейса по их ID
     const body = document.body;
-    const balanceContainer = document.getElementById('balance-container');
-    const assetsList = document.getElementById('assets-list');
-    const navButtons = document.querySelectorAll('.nav-btn'); // Все кнопки в нижней панели
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const pages = document.querySelectorAll('.page');
 
-    // --- Логика переключения темы ---
-    // Функция для применения темы
+    // Логика переключения темы (остаётся прежней)
     function applyTheme(theme) {
         if (theme === 'dark') {
             body.classList.add('dark-theme');
@@ -20,58 +15,64 @@ document.addEventListener('DOMContentLoaded', () => {
             body.classList.remove('dark-theme');
         }
     }
-
-    // Слушаем событие смены темы в Telegram
     tg.onEvent('themeChanged', () => {
         applyTheme(tg.colorScheme);
     });
-
-    // Устанавливаем начальную тему при запуске
     applyTheme(tg.colorScheme);
 
-    // --- Логика разворачивания списка активов ---
-    // При клике на контейнер с балансом
-    balanceContainer.addEventListener('click', () => {
-        // Проверяем, если список активов скрыт...
-        if (assetsList.classList.contains('hidden')) {
-            // ...показываем его
-            assetsList.classList.remove('hidden');
-            // Здесь мы будем динамически добавлять элементы списка
-            // Например:
-            assetsList.innerHTML = `
-                <div class="asset-item">
-                    <span>Золото</span>
-                    <span>8000 ₽</span>
-                </div>
-                <div class="asset-item">
-                    <span>TAC coin</span>
-                    <span>2000 ₽</span>
-                </div>
-            `;
-        } else {
-            // ...иначе, скрываем
-            assetsList.classList.add('hidden');
-        }
-    });
+    // Логика переключения страниц
+    function showPage(pageId) {
+        pages.forEach(page => {
+            page.classList.remove('active');
+            page.classList.add('hidden');
+        });
+        const currentPage = document.getElementById(pageId);
+        currentPage.classList.remove('hidden');
+        currentPage.classList.add('active');
+    }
 
-    // --- Логика навигации (подсветка активной кнопки) ---
+    // Слушатель событий для каждой навигационной кнопки
     navButtons.forEach(button => {
         button.addEventListener('click', () => {
-            // Сначала убираем класс 'active' у всех кнопок
             navButtons.forEach(btn => btn.classList.remove('active'));
-            // Затем добавляем его к нажатой кнопке
             button.classList.add('active');
 
-            // Здесь будет логика для переключения между страницами
-            // (например, история, новости и т.д.)
+            if (button.id === 'home-btn') {
+                showPage('home-page');
+            } else if (button.id === 'history-btn') {
+                showPage('history-page');
+            } else if (button.id === 'add-btn') {
+                showPage('add-page');
+            } else if (button.id === 'channel-btn') {
+                // Открываем канал в новом окне
+                tg.openLink('https://t.me/telegram'); // Замените на URL вашего канала
+            }
         });
     });
 
-    // --- Пример функции для обновления баланса (будет использоваться позже) ---
-    function updateBalance(newBalance) {
-        document.getElementById('total-balance').textContent = `${newBalance} ₽`;
+    // Функция для отрисовки активов
+    function renderAssets() {
+        const assetsList = document.getElementById('assets-list');
+        // Временные данные для примера
+        const assets = [
+            { name: 'Золото', amount: 8000, type: 'metal' },
+            { name: 'Bitcoin', amount: 2000, type: 'crypto' },
+            { name: 'Акции Газпром', amount: 5000, type: 'stocks' }
+        ];
+
+        assetsList.innerHTML = ''; // Очищаем список перед добавлением
+        assets.forEach(asset => {
+            const assetItem = document.createElement('div');
+            assetItem.classList.add('asset-item');
+            assetItem.innerHTML = `
+                <span>${asset.name}</span>
+                <span>${asset.amount} ₽</span>
+            `;
+            assetsList.appendChild(assetItem);
+        });
     }
 
-    // Вызываем функцию для обновления баланса (временно)
-    updateBalance(10000); // 8000 + 2000
+    // Инициализация при запуске
+    renderAssets(); // Отрисовываем активы
+    document.getElementById('total-balance').textContent = '15000 ₽'; // Обновляем баланс
 });
