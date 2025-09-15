@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Финансовый Трекер</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -16,16 +17,31 @@
             </header>
 
             <section class="assets-section centered">
-                <h3>Мои активы</h3>
+                <div class="assets-header">
+                    <h3>Мои активы</h3>
+                    <button id="toggle-assets-btn" class="toggle-btn">Свернуть</button>
+                </div>
                 <div id="assets-list" class="assets-list">
                     </div>
             </section>
         </div>
 
         <div id="history-page" class="page hidden centered">
-            <h2>История операций</h2>
-            <div id="history-list" class="history-list">
-                </div>
+            <div class="history-tabs">
+                <button id="history-list-tab" class="history-tab active">История</button>
+                <button id="history-chart-tab" class="history-tab">График</button>
+            </div>
+            
+            <div id="history-list-view" class="history-view active">
+                <h2>История операций</h2>
+                <div id="history-list" class="history-list">
+                    </div>
+            </div>
+
+            <div id="history-chart-view" class="history-view hidden">
+                <h2>Рост портфеля</h2>
+                <canvas id="portfolio-chart"></canvas>
+            </div>
         </div>
 
         <div id="add-page" class="page hidden centered">
