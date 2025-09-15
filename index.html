@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Финансовый Трекер</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <main class="container">
+        <div class="content">
+            <div id="balance-container" class="balance-container">
+                <p>Баланс</p>
+                <h1 id="total-balance">0 ₽</h1>
+            </div>
+
+            <div id="assets-list" class="assets-list hidden">
+            </div>
+        </div>
+    </main>
+
+    <nav class="footer-nav">
+        <button id="home-btn" class="nav-btn active">🏠</button>
+        <button id="history-btn" class="nav-btn">📊</button>
+        <button id="add-btn" class="nav-btn add-btn">+</button>
+        <button id="channel-btn" class="nav-btn">📢</button>
+        <button id="news-btn" class="nav-btn">📰</button>
+    </nav>
+
+    <script src="script.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</body>
+
+</html>
