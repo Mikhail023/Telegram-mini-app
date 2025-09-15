@@ -31,7 +31,7 @@ body {
     --card-bg: var(--card-bg-light);
     --text-color: var(--text-color-light);
     --accent-color: var(--accent-color-light);
-    --input-bg: var(--input-bg-light);
+    --input-bg: var(--input-bg-dark);
 }
 
 .dark-theme {
@@ -87,11 +87,27 @@ body {
     font-weight: 500;
 }
 
+.assets-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
 .assets-list {
     display: flex;
     flex-direction: column;
     gap: 15px;
     text-align: left;
+    transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
+    max-height: 500px;
+    overflow: hidden;
+    opacity: 1;
+}
+
+.assets-list.collapsed {
+    max-height: 0;
+    opacity: 0;
 }
 
 .asset-item {
@@ -102,10 +118,12 @@ body {
     padding: 20px;
     border-radius: 15px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid rgba(0,0,0,0.05);
 }
 
 .dark-theme .asset-item {
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.05);
 }
 
 .asset-item .left-info {
@@ -175,6 +193,33 @@ body {
 }
 
 /* Стили для истории */
+.history-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.history-tab {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    opacity: 0.6;
+    cursor: pointer;
+    transition: opacity 0.3s, background-color 0.3s;
+}
+.history-tab.active {
+    opacity: 1;
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.history-view.hidden {
+    display: none;
+}
+
 .history-list {
     display: flex;
     flex-direction: column;
@@ -205,6 +250,14 @@ body {
 .withdrawal {
     color: #e74c3c; /* Красный */
 }
+
+/* Стили для графика */
+#portfolio-chart {
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: 15px;
+}
+
 /* Стили для переключателя форм */
 .transaction-buttons {
     display: flex;
@@ -228,6 +281,15 @@ body {
     color: white;
 }
 
+.toggle-btn {
+    padding: 8px 12px;
+    border: 1px solid var(--accent-color);
+    background-color: transparent;
+    color: var(--accent-color);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
 
 .footer-nav {
     display: flex;
