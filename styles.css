@@ -91,7 +91,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 15px;
-    text-align: left;
 }
 
 .asset-item {
@@ -108,10 +107,35 @@ body {
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
-.asset-item span {
+.asset-item .left-info {
+    text-align: left;
+}
+
+.asset-item .right-info {
+    text-align: right;
+}
+
+.asset-item .name {
     font-size: 1.2rem;
     font-weight: 600;
 }
+
+.asset-item .type {
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+.asset-item .current-balance {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.asset-item .invested {
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
 
 .footer-nav {
     display: flex;
