@@ -108,9 +108,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (name && !isNaN(amount) && amount > 0) {
             assetsData.push({
                 name: name,
-                amount: amount,
+                invested: amount, // Это "вклад"
+                currentValue: amount, // Пока что currentValue равен вкладу
                 type: type,
-                // Здесь в будущем можно будет добавить банк, дату и т.д.
             });
 
             totalBalance += amount; // Обновляем общий баланс
@@ -125,7 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('home-btn').classList.add('active'); // Подсвечиваем кнопку "Домой"
             document.getElementById('add-btn').classList.remove('active'); // Убираем подсветку с "+"
             
-            // Здесь в будущем будет отправка данных на сервер
             tg.showAlert(`Актив "${name}" на сумму ${amount} ${currentCurrency} добавлен!`);
         } else {
             tg.showAlert('Пожалуйста, заполните все поля!');
@@ -149,8 +148,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const assetItem = document.createElement('div');
                 assetItem.classList.add('asset-item');
                 assetItem.innerHTML = `
-                    <span>${asset.name}</span>
-                    <span>${asset.amount} ${currentCurrency}</span>
+                    <div class="left-info">
+                        <span class="name">${asset.name}</span>
+                        <span class="type">${asset.type}</span>
+                    </div>
+                    <div class="right-info">
+                        <span class="current-balance">${asset.currentValue} ${currentCurrency}</span>
+                        <span class="invested">Вклад: ${asset.invested} ${currentCurrency}</span>
+                    </div>
                 `;
                 assetsList.appendChild(assetItem);
             });
