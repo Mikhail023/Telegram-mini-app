@@ -16,8 +16,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentCurrency = '₽';
     let totalBalance = 0;
-    const assetsData = {}; // Теперь это объект, а не массив
-    const transactionsHistory = []; // Новый массив для истории
+    let assetsData = {}; 
+    let transactionsHistory = [];
+
+    // --- Логика сохранения и загрузки данных ---
+    function saveData() {
+        const data = {
+            totalBalance: totalBalance,
+            assetsData: assetsData,
+            transactionsHistory: transactionsHistory,
+            currentCurrency: currentCurrency
+        };
+        tg.setItem('finance_data', JSON.stringify(data));
+    }
+
+    function loadData() {
+        const storedData = tg.getItem('finance_data');
+        if (storedData) {
+            try {
+                const data = JSON.parse(storedData);
+                totalBalance = data.totalBalance || 0;
+                assetsData = data.assetsData || {};
+                transactionsHistory = data.transactionsHistory || [];
+                currentCurrency = data.currentCurrency || '₽';
+            } catch (e) {
+                console.error("Failed to parse stored data:", e);
+                // Если данные повреждены, начинаем с нуля
+                totalBalance = 0;
+                assetsData = {};
+                transactionsHistory = [];
+                currentCurrency = '₽';
+            }
+        }
+    }
 
     // --- Логика переключения темы ---
     function applyTheme(theme) {
@@ -39,11 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById(pageId).classList.add('active');
 
-        // Обновляем список активов при переходе на страницу вывода
         if (pageId === 'add-page' && removeTabBtn.classList.contains('active')) {
             updateRemoveFormAssets();
         }
-        // Обновляем историю при переходе на страницу истории
         if (pageId === 'history-page') {
             renderHistory();
         }
@@ -87,28 +116,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Логика для страницы настроек ---
     document.getElementById('theme-light-btn').addEventListener('click', () => {
         applyTheme('light');
+        saveData();
     });
 
     document.getElementById('theme-dark-btn').addEventListener('click', () => {
         applyTheme('dark');
+        saveData();
     });
 
     document.getElementById('currency-rub-btn').addEventListener('click', () => {
         currentCurrency = '₽';
         updateCurrencyButtons('currency-rub-btn');
         updateAllDisplays();
+        saveData();
     });
 
     document.getElementById('currency-usd-btn').addEventListener('click', () => {
         currentCurrency = '$';
         updateCurrencyButtons('currency-usd-btn');
         updateAllDisplays();
+        saveData();
     });
     
     document.getElementById('currency-eur-btn').addEventListener('click', () => {
         currentCurrency = '€';
         updateCurrencyButtons('currency-eur-btn');
         updateAllDisplays();
+        saveData();
     });
 
     function updateCurrencyButtons(activeBtnId) {
@@ -134,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const type = document.getElementById('asset-type').value;
 
         if (name && !isNaN(amount) && amount > 0) {
-            // Если такой актив уже существует, обновляем его
             if (assetsData[name]) {
                 assetsData[name].value += amount;
             } else {
@@ -157,6 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bankSelectDiv.style.display = 'none';
 
             updateAllDisplays();
+            saveData();
             showPage('home-page');
             document.getElementById('home-btn').classList.add('active');
             document.getElementById('add-btn').classList.remove('active');
@@ -188,10 +222,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 removeForm.reset();
 
                 if (assetsData[name].value <= 0) {
-                    delete assetsData[name]; // Удаляем актив, если его сумма 0
+                    delete assetsData[name];
                 }
 
                 updateAllDisplays();
+                saveData();
                 showPage('home-page');
                 document.getElementById('home-btn').classList.add('active');
                 document.getElementById('add-btn').classList.remove('active');
@@ -213,17 +248,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function updateRemoveFormAssets() {
         removeAssetSelect.innerHTML = '';
-        if (Object.keys(assetsData).length === 0) {
+        const activeAssets = Object.keys(assetsData).filter(key => assetsData[key].value > 0);
+        if (activeAssets.length === 0) {
             removeAssetSelect.innerHTML = '<option value="">Нет активов для вывода</option>';
-            removeForm.querySelector('button').disabled = true;
+            removeForm.querySelector('button[type="submit"]').disabled = true; // Исправлено
         } else {
-            removeForm.querySelector('button').disabled = false;
-            for (const assetName in assetsData) {
+            removeForm.querySelector('button[type="submit"]').disabled = false; // Исправлено
+            activeAssets.forEach(assetName => {
                 const option = document.createElement('option');
                 option.value = assetName;
                 option.textContent = `${assetName} (${assetsData[assetName].value} ${currentCurrency})`;
                 removeAssetSelect.appendChild(option);
-            }
+            });
         }
     }
 
@@ -269,12 +305,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="amount ${amountClass}">${sign}${transaction.amount} ${currentCurrency}</span>
                     </div>
                 `;
-                historyList.prepend(historyItem); // Добавляем в начало списка
+                historyList.prepend(historyItem);
             });
         }
     }
 
-    // Вспомогательная функция для получения читаемого названия типа
     function getAssetTypeName(type) {
         switch(type) {
             case 'deposit': return 'Вклад';
@@ -286,6 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Инициализация при запуске
+    // Инициализация
+    loadData();
     updateAllDisplays();
 });
