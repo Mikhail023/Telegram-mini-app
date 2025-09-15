@@ -6,15 +6,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const body = document.body;
     const navButtons = document.querySelectorAll('.nav-btn');
     const pages = document.querySelectorAll('.page');
-    const themeBtns = document.querySelectorAll('.theme-btn');
-    const currencyBtns = document.querySelectorAll('.currency-btn');
     const addForm = document.getElementById('add-form');
+    const removeForm = document.getElementById('remove-form');
+    const addTabBtn = document.getElementById('add-btn-tab');
+    const removeTabBtn = document.getElementById('remove-btn-tab');
     const assetTypeSelect = document.getElementById('asset-type');
     const bankSelectDiv = document.getElementById('bank-select');
+    const removeAssetSelect = document.getElementById('remove-asset-select');
 
     let currentCurrency = '₽';
     let totalBalance = 0;
-    const assetsData = []; // Пустой массив для хранения данных
+    const assetsData = {}; // Теперь это объект, а не массив
+    const transactionsHistory = []; // Новый массив для истории
 
     // --- Логика переключения темы ---
     function applyTheme(theme) {
@@ -35,6 +38,15 @@ document.addEventListener('DOMContentLoaded', () => {
             page.classList.remove('active');
         });
         document.getElementById(pageId).classList.add('active');
+
+        // Обновляем список активов при переходе на страницу вывода
+        if (pageId === 'add-page' && removeTabBtn.classList.contains('active')) {
+            updateRemoveFormAssets();
+        }
+        // Обновляем историю при переходе на страницу истории
+        if (pageId === 'history-page') {
+            renderHistory();
+        }
     }
 
     navButtons.forEach(button => {
@@ -56,6 +68,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // --- Логика переключения форм добавления/удаления ---
+    addTabBtn.addEventListener('click', () => {
+        addTabBtn.classList.add('active');
+        removeTabBtn.classList.remove('active');
+        addForm.classList.remove('hidden');
+        removeForm.classList.add('hidden');
+    });
+
+    removeTabBtn.addEventListener('click', () => {
+        removeTabBtn.classList.add('active');
+        addTabBtn.classList.remove('active');
+        removeForm.classList.remove('hidden');
+        addForm.classList.add('hidden');
+        updateRemoveFormAssets();
+    });
+
     // --- Логика для страницы настроек ---
     document.getElementById('theme-light-btn').addEventListener('click', () => {
         applyTheme('light');
@@ -68,19 +96,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('currency-rub-btn').addEventListener('click', () => {
         currentCurrency = '₽';
         updateCurrencyButtons('currency-rub-btn');
-        updateBalanceDisplay();
+        updateAllDisplays();
     });
 
     document.getElementById('currency-usd-btn').addEventListener('click', () => {
         currentCurrency = '$';
         updateCurrencyButtons('currency-usd-btn');
-        updateBalanceDisplay();
+        updateAllDisplays();
     });
     
     document.getElementById('currency-eur-btn').addEventListener('click', () => {
         currentCurrency = '€';
         updateCurrencyButtons('currency-eur-btn');
-        updateBalanceDisplay();
+        updateAllDisplays();
     });
 
     function updateCurrencyButtons(activeBtnId) {
@@ -88,10 +116,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById(activeBtnId).classList.add('active');
     }
 
-    // --- Логика для формы добавления данных ---
-    // Показываем/скрываем поле "Банк" в зависимости от выбранного типа актива
+    // --- Логика для форм добавления/удаления ---
     assetTypeSelect.addEventListener('change', (event) => {
-        if (event.target.value === 'metal') {
+        const type = event.target.value;
+        if (type === 'deposit' || type === 'metal' || type === 'stocks') {
             bankSelectDiv.style.display = 'flex';
         } else {
             bankSelectDiv.style.display = 'none';
@@ -99,69 +127,165 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     addForm.addEventListener('submit', (event) => {
-        event.preventDefault(); // Предотвращаем перезагрузку страницы
+        event.preventDefault();
 
         const name = document.getElementById('asset-name').value;
         const amount = parseFloat(document.getElementById('asset-amount').value);
         const type = document.getElementById('asset-type').value;
 
         if (name && !isNaN(amount) && amount > 0) {
-            assetsData.push({
+            // Если такой актив уже существует, обновляем его
+            if (assetsData[name]) {
+                assetsData[name].value += amount;
+            } else {
+                assetsData[name] = {
+                    type: type,
+                    value: amount
+                };
+            }
+
+            totalBalance += amount;
+
+            transactionsHistory.push({
+                date: new Date().toLocaleString(),
                 name: name,
-                invested: amount, // Это "вклад"
-                currentValue: amount, // Пока что currentValue равен вкладу
-                type: type,
+                amount: amount,
+                action: 'deposit'
             });
 
-            totalBalance += amount; // Обновляем общий баланс
-
-            // Очищаем форму после добавления
             addForm.reset();
-            bankSelectDiv.style.display = 'none'; // Скрываем поле "Банк"
+            bankSelectDiv.style.display = 'none';
 
-            // Обновляем отображение
-            updateBalanceDisplay();
-            showPage('home-page'); // Возвращаемся на главную страницу
-            document.getElementById('home-btn').classList.add('active'); // Подсвечиваем кнопку "Домой"
-            document.getElementById('add-btn').classList.remove('active'); // Убираем подсветку с "+"
+            updateAllDisplays();
+            showPage('home-page');
+            document.getElementById('home-btn').classList.add('active');
+            document.getElementById('add-btn').classList.remove('active');
             
-            tg.showAlert(`Актив "${name}" на сумму ${amount} ${currentCurrency} добавлен!`);
+            tg.showAlert(`Актив "${name}" пополнен на ${amount} ${currentCurrency}!`);
         } else {
             tg.showAlert('Пожалуйста, заполните все поля!');
         }
     });
 
-    // Функция для отрисовки активов и обновления баланса
-    function updateBalanceDisplay() {
-        const totalBalanceElement = document.getElementById('total-balance');
-        const assetsList = document.getElementById('assets-list');
-        
-        // Обновляем баланс
-        totalBalanceElement.textContent = `${totalBalance} ${currentCurrency}`;
+    removeForm.addEventListener('submit', (event) => {
+        event.preventDefault();
 
-        // Обновляем список активов
+        const name = removeAssetSelect.value;
+        const amount = parseFloat(document.getElementById('remove-amount').value);
+
+        if (name && assetsData[name] && !isNaN(amount) && amount > 0) {
+            if (assetsData[name].value >= amount) {
+                assetsData[name].value -= amount;
+                totalBalance -= amount;
+
+                transactionsHistory.push({
+                    date: new Date().toLocaleString(),
+                    name: name,
+                    amount: amount,
+                    action: 'withdrawal'
+                });
+
+                removeForm.reset();
+
+                if (assetsData[name].value <= 0) {
+                    delete assetsData[name]; // Удаляем актив, если его сумма 0
+                }
+
+                updateAllDisplays();
+                showPage('home-page');
+                document.getElementById('home-btn').classList.add('active');
+                document.getElementById('add-btn').classList.remove('active');
+                tg.showAlert(`Со счета "${name}" выведено ${amount} ${currentCurrency}.`);
+            } else {
+                tg.showAlert('Недостаточно средств на счете!');
+            }
+        } else {
+            tg.showAlert('Пожалуйста, выберите актив и введите сумму!');
+        }
+    });
+
+    // --- Функции рендеринга ---
+    function updateAllDisplays() {
+        renderAssets();
+        renderHistory();
+        document.getElementById('total-balance').textContent = `${totalBalance} ${currentCurrency}`;
+    }
+    
+    function updateRemoveFormAssets() {
+        removeAssetSelect.innerHTML = '';
+        if (Object.keys(assetsData).length === 0) {
+            removeAssetSelect.innerHTML = '<option value="">Нет активов для вывода</option>';
+            removeForm.querySelector('button').disabled = true;
+        } else {
+            removeForm.querySelector('button').disabled = false;
+            for (const assetName in assetsData) {
+                const option = document.createElement('option');
+                option.value = assetName;
+                option.textContent = `${assetName} (${assetsData[assetName].value} ${currentCurrency})`;
+                removeAssetSelect.appendChild(option);
+            }
+        }
+    }
+
+    function renderAssets() {
+        const assetsList = document.getElementById('assets-list');
         assetsList.innerHTML = '';
-        if (assetsData.length === 0) {
+        if (Object.keys(assetsData).length === 0) {
             assetsList.innerHTML = `<p class="centered" style="opacity: 0.6;">Активов пока нет.</p>`;
         } else {
-            assetsData.forEach(asset => {
+            for (const name in assetsData) {
+                const asset = assetsData[name];
                 const assetItem = document.createElement('div');
                 assetItem.classList.add('asset-item');
                 assetItem.innerHTML = `
                     <div class="left-info">
-                        <span class="name">${asset.name}</span>
-                        <span class="type">${asset.type}</span>
+                        <span class="name">${name}</span>
+                        <span class="type">${getAssetTypeName(asset.type)}</span>
                     </div>
                     <div class="right-info">
-                        <span class="current-balance">${asset.currentValue} ${currentCurrency}</span>
-                        <span class="invested">Вклад: ${asset.invested} ${currentCurrency}</span>
+                        <span class="current-balance">${asset.value} ${currentCurrency}</span>
                     </div>
                 `;
                 assetsList.appendChild(assetItem);
+            }
+        }
+    }
+    
+    function renderHistory() {
+        const historyList = document.getElementById('history-list');
+        historyList.innerHTML = '';
+        if (transactionsHistory.length === 0) {
+            historyList.innerHTML = `<p class="centered" style="opacity: 0.6;">История операций пуста.</p>`;
+        } else {
+            transactionsHistory.forEach(transaction => {
+                const historyItem = document.createElement('div');
+                historyItem.classList.add('history-item');
+                const amountClass = transaction.action === 'deposit' ? 'deposit' : 'withdrawal';
+                const sign = transaction.action === 'deposit' ? '+' : '-';
+                historyItem.innerHTML = `
+                    <div class="date">${transaction.date}</div>
+                    <div class="details">
+                        <span>${transaction.name}</span>
+                        <span class="amount ${amountClass}">${sign}${transaction.amount} ${currentCurrency}</span>
+                    </div>
+                `;
+                historyList.prepend(historyItem); // Добавляем в начало списка
             });
         }
     }
 
+    // Вспомогательная функция для получения читаемого названия типа
+    function getAssetTypeName(type) {
+        switch(type) {
+            case 'deposit': return 'Вклад';
+            case 'stocks': return 'Акции';
+            case 'bonds': return 'Облигации';
+            case 'metal': return 'Драгметаллы';
+            case 'crypto': return 'Криптовалюта';
+            default: return '';
+        }
+    }
+
     // Инициализация при запуске
-    updateBalanceDisplay();
+    updateAllDisplays();
 });
