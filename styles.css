@@ -7,37 +7,103 @@ body {
     min-height: 100vh;
     background-color: var(--bg-color);
     color: var(--text-color);
-    transition: background-color 0.3s, color 0.3s;
+    transition: background-color 0.4s, color 0.4s;
+    overflow: hidden; /* Чтобы не было лишних скроллов */
 }
 
 :root {
-    /* Дневная тема */
-    --bg-color-light: #ffffff;
-    --secondary-color-light: #0d3b66;
-    --text-color-light: #000000;
-    --card-bg-light: #f0f0f0;
-    /* Ночная тема */
-    --bg-color-dark: #363636;
-    --secondary-color-dark: #0d3b66;
-    --text-color-dark: #ffffff;
-    --card-bg-dark: #4a4a4a;
-    /* По умолчанию - дневная тема */
+    /* Цвета для дневной темы */
+    --bg-color-light: #f5f5f5;
+    --card-bg-light: #ffffff;
+    --text-color-light: #2c3e50;
+    --accent-color-light: #3498db;
+
+    /* Цвета для ночной темы */
+    --bg-color-dark: #2c3e50;
+    --card-bg-dark: #34495e;
+    --text-color-dark: #ecf0f1;
+    --accent-color-dark: #3498db;
+
+    /* Переменные по умолчанию */
     --bg-color: var(--bg-color-light);
-    --secondary-color: var(--secondary-color-light);
-    --text-color: var(--text-color-light);
     --card-bg: var(--card-bg-light);
+    --text-color: var(--text-color-light);
+    --accent-color: var(--accent-color-light);
 }
 
 .dark-theme {
     --bg-color: var(--bg-color-dark);
-    --secondary-color: var(--secondary-color-dark);
-    --text-color: var(--text-color-dark);
     --card-bg: var(--card-bg-dark);
+    --text-color: var(--text-color-dark);
+    --accent-color: var(--accent-color-dark);
 }
 
 .container {
     flex-grow: 1;
     padding: 20px;
+    overflow-y: auto;
+}
+
+.page {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+
+.page.active {
+    display: block;
+    opacity: 1;
+}
+
+.header {
+    text-align: center;
+    padding: 30px 0;
+}
+
+.header h2 {
+    font-weight: 400;
+    margin: 0;
+    opacity: 0.8;
+}
+
+.header h1 {
+    font-size: 5rem; /* Значительно крупнее */
+    font-weight: 700;
+    margin: 10px 0 0;
+}
+
+.assets-section {
+    margin-top: 30px;
+}
+
+.assets-section h3 {
+    margin: 0 0 15px;
+    font-weight: 500;
+}
+
+.assets-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.asset-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.dark-theme .asset-item {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.asset-item span {
+    font-size: 1.2rem;
+    font-weight: 600;
 }
 
 .footer-nav {
@@ -50,18 +116,20 @@ body {
     padding: 10px 0;
     position: sticky;
     bottom: 0;
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
 }
 
 .dark-theme .footer-nav {
-    background-color: rgba(54, 54, 54, 0.8);
-    border-top: 1px solid #4a4a4a;
+    background-color: rgba(44, 62, 80, 0.8);
+    border-top: 1px solid #34495e;
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
 }
 
 .nav-btn {
     background: none;
     border: none;
     font-size: 24px;
-    color: var(--secondary-color);
+    color: var(--text-color);
     cursor: pointer;
     opacity: 0.6;
     transition: opacity 0.3s;
@@ -71,28 +139,18 @@ body {
     opacity: 1;
 }
 
-.balance-container {
-    background-color: var(--card-bg);
-    padding: 20px;
-    border-radius: 15px;
-    text-align: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    margin-bottom: 20px;
+.add-btn {
+    background-color: var(--accent-color-light);
+    color: white;
+    font-size: 36px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    transform: translateY(-20px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: transform 0.3s;
 }
 
-.balance-container p {
-    font-size: 14px;
-    opacity: 0.7;
-    margin: 0;
-}
-
-.balance-container h1 {
-    font-size: 48px;
-    margin: 10px 0 0;
-    font-weight: 600;
-}
-
-.assets-list.hidden {
-    display: none;
+.dark-theme .add-btn {
+    background-color: var(--accent-color-dark);
 }
