@@ -33,20 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadData() {
         const storedData = tg.getItem('finance_data');
         if (storedData) {
-            try {
-                const data = JSON.parse(storedData);
-                totalBalance = data.totalBalance || 0;
-                assetsData = data.assetsData || {};
-                transactionsHistory = data.transactionsHistory || [];
-                currentCurrency = data.currentCurrency || '₽';
-            } catch (e) {
-                console.error("Failed to parse stored data:", e);
-                // Если данные повреждены, начинаем с нуля
-                totalBalance = 0;
-                assetsData = {};
-                transactionsHistory = [];
-                currentCurrency = '₽';
-            }
+            const data = JSON.parse(storedData);
+            totalBalance = data.totalBalance || 0;
+            assetsData = data.assetsData || {};
+            transactionsHistory = data.transactionsHistory || [];
+            currentCurrency = data.currentCurrency || '₽';
         }
     }
 
@@ -251,9 +242,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeAssets = Object.keys(assetsData).filter(key => assetsData[key].value > 0);
         if (activeAssets.length === 0) {
             removeAssetSelect.innerHTML = '<option value="">Нет активов для вывода</option>';
-            removeForm.querySelector('button[type="submit"]').disabled = true; // Исправлено
+            removeForm.querySelector('button').disabled = true;
         } else {
-            removeForm.querySelector('button[type="submit"]').disabled = false; // Исправлено
+            removeForm.querySelector('button').disabled = false;
             activeAssets.forEach(assetName => {
                 const option = document.createElement('option');
                 option.value = assetName;
