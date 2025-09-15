@@ -251,11 +251,12 @@ body {
     color: #e74c3c; /* Красный */
 }
 
-/* Стили для графика */
-#portfolio-chart {
+/* Стили для графиков */
+#portfolio-chart, #assets-distribution-chart {
     background-color: var(--card-bg);
     padding: 20px;
     border-radius: 15px;
+    margin-bottom: 20px;
 }
 
 /* Стили для переключателя форм */
