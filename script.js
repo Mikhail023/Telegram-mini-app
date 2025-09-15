@@ -12,12 +12,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const assetTypeSelect = document.getElementById('asset-type');
     const bankSelectDiv = document.getElementById('bank-select');
     const removeAssetSelect = document.getElementById('remove-asset-select');
+    const toggleAssetsBtn = document.getElementById('toggle-assets-btn');
+    const assetsListDiv = document.getElementById('assets-list');
+    const historyListTab = document.getElementById('history-list-tab');
+    const historyChartTab = document.getElementById('history-chart-tab');
+    const historyListView = document.getElementById('history-list-view');
+    const historyChartView = document.getElementById('history-chart-view');
+    const portfolioChartCtx = document.getElementById('portfolio-chart').getContext('2d');
 
-    let currentCurrency = '₽';
+    let currentCurrency = 'RUB'; // Базовая валюта
     let totalBalance = 0;
     let assetsData = {};
     let transactionsHistory = [];
-    let exchangeRates = { USD: 90, EUR: 100 }; // Курсы по умолчанию
+    let portfolioChart;
 
     // --- Логика сохранения и загрузки данных ---
     function saveData() {
@@ -38,55 +45,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalBalance = data.totalBalance || 0;
                 assetsData = data.assetsData || {};
                 transactionsHistory = data.transactionsHistory || [];
-                currentCurrency = data.currentCurrency || '₽';
+                currentCurrency = data.currentCurrency || 'RUB';
             } catch (e) {
                 console.error("Failed to parse stored data:", e);
                 totalBalance = 0;
                 assetsData = {};
                 transactionsHistory = [];
-                currentCurrency = '₽';
+                currentCurrency = 'RUB';
             }
         }
     }
 
-    // --- Получение курсов валют ---
-    async function fetchExchangeRates() {
-        try {
-            const response = await fetch('https://api.exchangerate-api.com/v4/latest/RUB');
-            const data = await response.json();
-            if (data && data.rates) {
-                exchangeRates.USD = 1 / data.rates.USD;
-                exchangeRates.EUR = 1 / data.rates.EUR;
-            }
-        } catch (error) {
-            console.error('Ошибка при получении курсов:', error);
-        }
+    // --- Конвертация валют ---
+    const exchangeRates = {
+        RUB: { RUB: 1, USD: 0.011, EUR: 0.009 }, // Примерные курсы
+        USD: { RUB: 90, USD: 1, EUR: 0.92 },
+        EUR: { RUB: 100, USD: 1.08, EUR: 1 }
+    };
+    
+    function convertAmount(amount, from, to) {
+        if (from === to) return amount;
+        return amount * (exchangeRates[from][to] || 1);
     }
     
-    // --- Конвертация валют ---
-    function convertBalance(from, to) {
-        if (from === to) return;
-
-        const rateTo = exchangeRates[to] || 1;
-        const rateFrom = exchangeRates[from] || 1;
-        const conversionFactor = rateFrom / rateTo;
-
-        totalBalance *= conversionFactor;
-        for (const name in assetsData) {
-            assetsData[name].value *= conversionFactor;
+    function getCurrencySymbol(currency) {
+        switch (currency) {
+            case 'RUB': return '₽';
+            case 'USD': return '$';
+            case 'EUR': return '€';
+            default: return currency;
         }
-        transactionsHistory.forEach(transaction => {
-            transaction.amount *= conversionFactor;
-        });
-
-        // Округляем до 2 знаков после запятой
-        totalBalance = Math.round(totalBalance * 100) / 100;
-        for (const name in assetsData) {
-            assetsData[name].value = Math.round(assetsData[name].value * 100) / 100;
-        }
-        transactionsHistory.forEach(transaction => {
-            transaction.amount = Math.round(transaction.amount * 100) / 100;
-        });
     }
 
     // --- Логика переключения темы ---
@@ -114,6 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (pageId === 'history-page') {
             renderHistory();
+            renderChart();
         }
     }
 
@@ -164,15 +153,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('currency-rub-btn').addEventListener('click', () => {
-        convertBalance(currentCurrency, '₽');
-        currentCurrency = '₽';
+        currentCurrency = 'RUB';
         updateCurrencyButtons('currency-rub-btn');
         updateAllDisplays();
         saveData();
     });
 
     document.getElementById('currency-usd-btn').addEventListener('click', () => {
-        convertBalance(currentCurrency, 'USD');
         currentCurrency = 'USD';
         updateCurrencyButtons('currency-usd-btn');
         updateAllDisplays();
@@ -180,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     document.getElementById('currency-eur-btn').addEventListener('click', () => {
-        convertBalance(currentCurrency, 'EUR');
         currentCurrency = 'EUR';
         updateCurrencyButtons('currency-eur-btn');
         updateAllDisplays();
@@ -204,34 +190,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     addForm.addEventListener('submit', (event) => {
         event.preventDefault();
-
         const name = document.getElementById('asset-name').value;
-        let amount = parseFloat(document.getElementById('asset-amount').value);
+        const amount = parseFloat(document.getElementById('asset-amount').value);
         const type = document.getElementById('asset-type').value;
 
         if (name && !isNaN(amount) && amount > 0) {
-            // Конвертируем введенную сумму в базовую валюту (рубли) для хранения
-            const baseCurrency = '₽';
-            if (currentCurrency !== baseCurrency) {
-                const rateFrom = exchangeRates[currentCurrency] || 1;
-                amount = amount / rateFrom;
-            }
+            const amountInRub = convertAmount(amount, currentCurrency, 'RUB');
             
             if (assetsData[name]) {
-                assetsData[name].value += amount;
+                assetsData[name].value += amountInRub;
             } else {
                 assetsData[name] = {
                     type: type,
-                    value: amount,
+                    value: amountInRub,
                 };
             }
 
-            totalBalance += amount;
+            totalBalance += amountInRub;
 
             transactionsHistory.push({
                 date: new Date().toLocaleString(),
                 name: name,
-                amount: amount,
+                amount: amountInRub,
                 action: 'deposit'
             });
 
@@ -244,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('home-btn').classList.add('active');
             document.getElementById('add-btn').classList.remove('active');
             
-            tg.showAlert(`Актив "${name}" пополнен на ${amount} ${currentCurrency}!`);
+            tg.showAlert(`Актив "${name}" пополнен на ${amount.toFixed(2)} ${getCurrencySymbol(currentCurrency)}!`);
         } else {
             tg.showAlert('Пожалуйста, заполните все поля!');
         }
@@ -252,31 +232,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     removeForm.addEventListener('submit', (event) => {
         event.preventDefault();
-
         const name = removeAssetSelect.value;
-        let amount = parseFloat(document.getElementById('remove-amount').value);
+        const amount = parseFloat(document.getElementById('remove-amount').value);
 
         if (name && assetsData[name] && !isNaN(amount) && amount > 0) {
-            // Конвертируем введенную сумму в базовую валюту (рубли) для вывода
-            const baseCurrency = '₽';
-            if (currentCurrency !== baseCurrency) {
-                const rateFrom = exchangeRates[currentCurrency] || 1;
-                amount = amount / rateFrom;
-            }
+            const amountInRub = convertAmount(amount, currentCurrency, 'RUB');
 
-            if (assetsData[name].value >= amount) {
-                assetsData[name].value -= amount;
-                totalBalance -= amount;
+            if (assetsData[name].value >= amountInRub) {
+                assetsData[name].value -= amountInRub;
+                totalBalance -= amountInRub;
 
                 transactionsHistory.push({
                     date: new Date().toLocaleString(),
                     name: name,
-                    amount: amount,
+                    amount: amountInRub,
                     action: 'withdrawal'
                 });
 
                 removeForm.reset();
-
                 if (assetsData[name].value <= 0) {
                     delete assetsData[name];
                 }
@@ -286,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showPage('home-page');
                 document.getElementById('home-btn').classList.add('active');
                 document.getElementById('add-btn').classList.remove('active');
-                tg.showAlert(`Со счета "${name}" выведено ${amount} ${currentCurrency}.`);
+                tg.showAlert(`Со счета "${name}" выведено ${amount.toFixed(2)} ${getCurrencySymbol(currentCurrency)}.`);
             } else {
                 tg.showAlert('Недостаточно средств на счете!');
             }
@@ -297,9 +270,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Функции рендеринга ---
     function updateAllDisplays() {
+        const displayTotal = convertAmount(totalBalance, 'RUB', currentCurrency);
+        document.getElementById('total-balance').textContent = `${displayTotal.toFixed(2)} ${getCurrencySymbol(currentCurrency)}`;
         renderAssets();
         renderHistory();
-        document.getElementById('total-balance').textContent = `${totalBalance.toFixed(2)} ${currentCurrency}`;
+        renderChart();
     }
     
     function updateRemoveFormAssets() {
@@ -314,7 +289,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const assetValue = assetsData[assetName].value;
                 const option = document.createElement('option');
                 option.value = assetName;
-                option.textContent = `${assetName} (${(assetValue * (exchangeRates[currentCurrency] || 1)).toFixed(2)} ${currentCurrency})`;
+                const displayValue = convertAmount(assetValue, 'RUB', currentCurrency);
+                option.textContent = `${assetName} (${displayValue.toFixed(2)} ${getCurrencySymbol(currentCurrency)})`;
                 removeAssetSelect.appendChild(option);
             });
         }
@@ -328,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             for (const name in assetsData) {
                 const asset = assetsData[name];
-                const displayValue = asset.value * (exchangeRates[currentCurrency] || 1);
+                const displayValue = convertAmount(asset.value, 'RUB', currentCurrency);
                 const assetItem = document.createElement('div');
                 assetItem.classList.add('asset-item');
                 assetItem.innerHTML = `
@@ -337,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="type">${getAssetTypeName(asset.type)}</span>
                     </div>
                     <div class="right-info">
-                        <span class="current-balance">${displayValue.toFixed(2)} ${currentCurrency}</span>
+                        <span class="current-balance">${displayValue.toFixed(2)} ${getCurrencySymbol(currentCurrency)}</span>
                     </div>
                 `;
                 assetsList.appendChild(assetItem);
@@ -352,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
             historyList.innerHTML = `<p class="centered" style="opacity: 0.6;">История операций пуста.</p>`;
         } else {
             transactionsHistory.forEach(transaction => {
-                const displayAmount = transaction.amount * (exchangeRates[currentCurrency] || 1);
+                const displayAmount = convertAmount(transaction.amount, 'RUB', currentCurrency);
                 const historyItem = document.createElement('div');
                 historyItem.classList.add('history-item');
                 const amountClass = transaction.action === 'deposit' ? 'deposit' : 'withdrawal';
@@ -361,13 +337,98 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="date">${transaction.date}</div>
                     <div class="details">
                         <span>${transaction.name}</span>
-                        <span class="amount ${amountClass}">${sign}${displayAmount.toFixed(2)} ${currentCurrency}</span>
+                        <span class="amount ${amountClass}">${sign}${displayAmount.toFixed(2)} ${getCurrencySymbol(currentCurrency)}</span>
                     </div>
                 `;
                 historyList.prepend(historyItem);
             });
         }
     }
+
+    // --- Логика графика ---
+    function renderChart() {
+        if (portfolioChart) {
+            portfolioChart.destroy();
+        }
+
+        const dates = [];
+        const balances = [];
+        let currentBalanceForChart = 0;
+
+        // Создаем временные метки и балансы на основе истории
+        if (transactionsHistory.length > 0) {
+            dates.push(new Date(transactionsHistory[0].date).toLocaleDateString());
+            balances.push(0);
+            
+            transactionsHistory.forEach(t => {
+                currentBalanceForChart += t.amount * (t.action === 'deposit' ? 1 : -1);
+                dates.push(new Date(t.date).toLocaleDateString());
+                balances.push(convertAmount(currentBalanceForChart, 'RUB', currentCurrency));
+            });
+        } else {
+            dates.push(new Date().toLocaleDateString());
+            balances.push(0);
+        }
+
+        portfolioChart = new Chart(portfolioChartCtx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Баланс портфеля',
+                    data: balances,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // --- Переключение вкладок истории ---
+    historyListTab.addEventListener('click', () => {
+        historyListTab.classList.add('active');
+        historyChartTab.classList.remove('active');
+        historyListView.classList.remove('hidden');
+        historyChartView.classList.add('hidden');
+        renderHistory();
+    });
+
+    historyChartTab.addEventListener('click', () => {
+        historyChartTab.classList.add('active');
+        historyListTab.classList.remove('active');
+        historyChartView.classList.remove('hidden');
+        historyListView.classList.add('hidden');
+        renderChart();
+    });
+
+    // --- Сворачивание/разворачивание списка активов ---
+    let assetsCollapsed = false;
+    toggleAssetsBtn.addEventListener('click', () => {
+        assetsCollapsed = !assetsCollapsed;
+        if (assetsCollapsed) {
+            assetsListDiv.classList.add('collapsed');
+            toggleAssetsBtn.textContent = 'Развернуть';
+        } else {
+            assetsListDiv.classList.remove('collapsed');
+            toggleAssetsBtn.textContent = 'Свернуть';
+        }
+    });
 
     function getAssetTypeName(type) {
         switch(type) {
@@ -382,9 +443,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Инициализация
     loadData();
-    fetchExchangeRates().then(() => {
-        updateAllDisplays();
-        // Загружаем актуальные курсы и сохраняем, чтобы они были доступны оффлайн
-        saveData();
-    });
+    updateAllDisplays();
 });
