@@ -91,6 +91,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    text-align: left;
 }
 
 .asset-item {
@@ -128,12 +129,103 @@ body {
 .asset-item .current-balance {
     font-size: 1.2rem;
     font-weight: 600;
-    margin-bottom: 5px;
 }
 
-.asset-item .invested {
-    font-size: 0.9rem;
-    opacity: 0.7;
+/* Изменения в стилях для формы */
+.add-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 400px;
+    margin: 20px auto 0;
+    text-align: left;
+}
+.add-form.hidden {
+    display: none;
+}
+.add-form label {
+    font-weight: 600;
+}
+.add-form input,
+.add-form select {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    transition: background-color 0.3s;
+}
+.add-form button {
+    padding: 15px;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.add-form button:hover {
+    background-color: #2980b9;
+}
+.bank-select {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Стили для истории */
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+.history-item {
+    padding: 15px;
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    text-align: left;
+}
+.history-item .date {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    margin-bottom: 5px;
+}
+.history-item .details {
+    display: flex;
+    justify-content: space-between;
+}
+.history-item .amount {
+    font-weight: 600;
+}
+.deposit {
+    color: #2ecc71; /* Зелёный */
+}
+.withdrawal {
+    color: #e74c3c; /* Красный */
+}
+/* Стили для переключателя форм */
+.transaction-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.transaction-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    opacity: 0.6;
+    cursor: pointer;
+    transition: opacity 0.3s;
+}
+.transaction-btn.active {
+    opacity: 1;
+    background-color: var(--accent-color);
+    color: white;
 }
 
 
@@ -173,52 +265,6 @@ body {
     background-color: var(--card-bg);
 }
 
-/* Стили для формы */
-.add-form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    max-width: 400px;
-    margin: 0 auto;
-    text-align: left;
-}
-
-.add-form label {
-    font-weight: 600;
-}
-
-.add-form input,
-.add-form select {
-    padding: 12px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: var(--input-bg);
-    color: var(--text-color);
-    transition: background-color 0.3s;
-}
-
-.add-form button {
-    padding: 15px;
-    background-color: var(--accent-color);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.add-form button:hover {
-    background-color: #2980b9;
-}
-
-.bank-select {
-    display: none;
-    flex-direction: column;
-    gap: 10px;
-}
-
-/* Стили для настроек */
 .setting-options {
     display: flex;
     justify-content: center;
