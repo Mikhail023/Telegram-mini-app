@@ -29,7 +29,34 @@
 
         <div id="add-page" class="page hidden centered">
             <h2>Добавить транзакцию</h2>
-            <p>Форма для добавления данных.</p>
+            <form id="add-form" class="add-form">
+                <label for="asset-name">Название актива</label>
+                <input type="text" id="asset-name" name="asset-name" required>
+
+                <label for="asset-amount">Сумма (в рублях)</label>
+                <input type="number" id="asset-amount" name="asset-amount" required>
+                
+                <label for="asset-type">Тип актива</label>
+                <select id="asset-type" name="asset-type">
+                    <option value="metal">Драгоценные металлы</option>
+                    <option value="crypto">Криптовалюта</option>
+                    <option value="stocks">Акции</option>
+                </select>
+                
+                <div id="bank-select" class="bank-select">
+                    <label for="bank-name">Банк покупки</label>
+                    <select id="bank-name" name="bank-name">
+                        <option value="sberbank">Сбербанк</option>
+                        <option value="alfabank">Альфа-банк</option>
+                        <option value="tbank">Т-Банк</option>
+                        <option value="vtb">ВТБ</option>
+                        <option value="yandexbank">Яндекс Банк</option>
+                        <option value="gazprombank">Газпромбанк</option>
+                    </select>
+                </div>
+                
+                <button type="submit">Добавить</button>
+            </form>
         </div>
         
         <div id="settings-page" class="page hidden centered">
